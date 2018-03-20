@@ -1,3 +1,5 @@
+package com.tlherr.Coursera.Assignment_1;
+
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -7,6 +9,10 @@ import java.security.SignatureException;
 public class Crypto {
 
     /**
+     * Verifies a signature
+     * This method takes a public key, a message and a signature, and returns true if and only ​ signature
+     * correctly verifies over ​ message ​ with the public key ​ pubKey
+     *
      * @return true is {@code signature} is a valid digital signature of {@code message} under the
      *         key {@code pubKey}. Internally, this uses RSA signature, but the student does not
      *         have to deal with any of the implementation details of the specific signature
