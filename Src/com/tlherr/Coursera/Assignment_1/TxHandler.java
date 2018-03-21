@@ -1,7 +1,12 @@
 
 package com.tlherr.Coursera.Assignment_1;
 
+import java.security.PublicKey;
+import java.security.Signature;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Implementation of handleTxs() should return mutually valid transaction set of maximal size (cant be enlarged simply by adding
@@ -12,6 +17,96 @@ import java.util.Iterator;
  * transactions that claim outputs from transactions that were accepted in a pervious call to handleTxs()
  */
 public class TxHandler {
+
+    /**
+     * Have to validate the following:
+     *
+     * 1) All outputs claimed in Transaction are in the current UTXO pool
+     * 2) Signatures on each transaction input are valid
+     * 3) No UTXOs are claimed multiple times by Transactions (Prevent Double Spending)
+     * 4) None of the transaction output values are negative
+     * 5) Sum of the transaction inputs is greater than the sum of the output values
+     *
+     * If any of these conditions are not met the entire transaction is invalid
+     */
+    private class TxValidator {
+
+        /**
+         * Check if all outputs are in the pool and that no UTXOs are claimed multiple times
+         *
+         * @param utxoPool  UTXOPool    Current set of unspent transactions
+         * @param tx        Transaction Transactions
+         * @return          Boolean     True if valid
+         */
+        public boolean isValid(UTXOPool utxoPool, Transaction tx) {
+
+            int inputSum = 0;
+            int outputSum = 0;
+
+            //This set will hold all "claimed" txs, so we can enforce rule 3.
+            Set<UTXO> claimedTXs = new HashSet<>();
+
+            //Loop through all transaction inputs
+            for(int i = 0; i < tx.numInputs(); i++) {
+
+                Transaction.Input currentInput = tx.getInput(i);
+
+                //If the input is null, then transaction cant be valid
+                if(currentInput==null) {
+                    return false;
+                }
+
+                //Create the UTXO for this input, then check if it exists in the current pool
+                UTXO utxo = new UTXO(currentInput.prevTxHash, currentInput.outputIndex);
+
+                //If UTXO made from current TX is not in the pool or has already been claimed by another TX it is invalid
+                if(!utxoPool.contains(utxo) || claimedTXs.contains(utxo)) {
+                    return false;
+                }
+
+                //Generated UTXO was in current pool and not already claimed, so claim it and move on
+                claimedTXs.add(utxo);
+
+                //To verify a signature, we need a public key, message (raw unsigned data) and a signature
+
+                Transaction.Output currentOutput = utxoPool.getTxOutput(utxo);
+
+
+                PublicKey pubkey = currentOutput.address;
+
+                byte[] message = tx.getRawDataToSign(i);
+
+                byte[] signature = currentInput.signature;
+
+                //If signature cannot be validated then return false
+                if(!Crypto.verifySignature(pubkey, message, signature)) {
+                    return false;
+                }
+
+                //If we have made it here then the input is valid (not claimed multiple times, signature checks out)
+                inputSum += currentOutput.value;
+            }
+
+            //Loop through all transaction outputs
+            for(int i = 0; i < tx.numOutputs(); i++) {
+
+                Transaction.Output currentOutput = tx.getOutput(i);
+                if(currentOutput.value<0) {
+                    return false;
+                }
+                outputSum+=currentOutput.value;
+            }
+
+
+            return inputSum < outputSum;
+        }
+    }
+
+
+
+
+
+
 
     private UTXOPool currentPool;
 
@@ -45,17 +140,9 @@ public class TxHandler {
      */
     public boolean isValidTx(Transaction tx) {
 
-        UTXOPool currentPool = getCurrentPool();
+        TxValidator validator = new TxValidator();
 
-        //Check that all outputs in tx are in the current pool
-        for (Iterator<Transaction.Output> i = tx.getOutputs().iterator(); i.hasNext();) {
-            Transaction.Output current = i.next();
-
-
-        }
-
-
-        return false;
+        return validator.isValid(this.currentPool, tx);
     }
 
     /**

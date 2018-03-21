@@ -14,7 +14,6 @@ import java.security.PublicKey;
  * also contain methods to compute digests to sign/hash, add signature to output and compute and store the hash of the transaction
  * once all inputs/outputs/signatures have been added
  *
- *
  */
 public class Transaction {
 
