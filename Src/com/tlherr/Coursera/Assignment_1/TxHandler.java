@@ -18,110 +18,6 @@ import java.util.Set;
  */
 public class TxHandler {
 
-    /**
-     * Have to validate the following:
-     *
-     * 1) All outputs claimed in Transaction are in the current UTXO pool
-     * 2) Signatures on each transaction input are valid
-     * 3) No UTXOs are claimed multiple times by Transactions (Prevent Double Spending)
-     * 4) None of the transaction output values are negative
-     * 5) Sum of the transaction inputs is greater than the sum of the output values
-     *
-     * If any of these conditions are not met the entire transaction is invalid
-     */
-    private class TxValidator {
-
-        /**
-         * Check if all outputs are in the pool and that no UTXOs are claimed multiple times
-         *
-         * @param utxoPool  UTXOPool    Current set of unspent transactions
-         * @param tx        Transaction Transactions
-         * @return          Boolean     True if valid
-         */
-        public boolean isValid(UTXOPool utxoPool, Transaction tx) {
-
-            System.out.println(String.format("Validating Transaction. %s Inputs %s Outputs", tx.numInputs(), tx.numOutputs()));
-
-            int inputSum = 0;
-            int outputSum = 0;
-
-            //This set will hold all "claimed" txs, so we can enforce rule 3.
-            Set<UTXO> claimedTXs = new HashSet<>();
-
-            //Loop through all transaction inputs
-            for(int i = 0; i < tx.numInputs(); i++) {
-
-                Transaction.Input currentInput = tx.getInput(i);
-
-                //If the input is null, then transaction cant be valid
-                if(currentInput==null) {
-                    System.out.println("Input was null, invalid transaction");
-                    return false;
-                }
-
-                //Create the UTXO for this input, then check if it exists in the current pool
-                UTXO utxo = new UTXO(currentInput.prevTxHash, currentInput.outputIndex);
-
-                //If UTXO made from current TX is not in the pool or has already been claimed by another TX it is invalid
-                if(!utxoPool.contains(utxo) || claimedTXs.contains(utxo)) {
-                    System.out.println("UTXO for current TX either not in pool or already claimed, invalid transaction");
-                    return false;
-                }
-
-                //Generated UTXO was in current pool and not already claimed, so claim it and move on
-                claimedTXs.add(utxo);
-
-                Transaction.Output currentOutput = utxoPool.getTxOutput(utxo);
-
-                //To verify a signature, we need a public key, message (raw unsigned data) and a signature
-                PublicKey pubkey = currentOutput.address;
-                byte[] message = tx.getRawDataToSign(i);
-                byte[] signature = currentInput.signature;
-
-                //No signature = not valid transaction
-                if(signature==null) {
-                    System.out.println("Unsigned input, invalid transaction");
-                    return false;
-                }
-
-                //If signature cannot be validated then return false
-                if(!Crypto.verifySignature(pubkey, message, signature)) {
-                    System.out.println("Invalid Signature, invalid transaction");
-                    return false;
-                }
-
-                //If we have made it here then the input is valid (not claimed multiple times, signature checks out)
-                System.out.println(String.format("Adding: %s to Input", currentOutput.value));
-                inputSum += currentOutput.value;
-            }
-
-            //Loop through all transaction outputs
-            for(int i = 0; i < tx.numOutputs(); i++) {
-
-                Transaction.Output currentTxOutput = tx.getOutput(i);
-                if(currentTxOutput.value<0) {
-                    System.out.println("Output values cannot be negative, invalid transaction");
-                    return false;
-                }
-
-                System.out.println(String.format("Adding: %s to Output", currentTxOutput.value));
-                outputSum += currentTxOutput.value;
-            }
-
-
-            System.out.println(String.format("Checking Sums. Input: %s Output %s", inputSum, outputSum));
-            //Sum of the transaction inputs is greater than the sum of the output values
-
-            return outputSum <= inputSum;
-        }
-    }
-
-
-
-
-
-
-
     private UTXOPool currentPool;
 
     private void setCurrentPool(UTXOPool currentPool) {
@@ -153,10 +49,81 @@ public class TxHandler {
      *     values; and false otherwise.
      */
     public boolean isValidTx(Transaction tx) {
+        UTXOPool utxoPool = getCurrentPool();
 
-        TxValidator validator = new TxValidator();
+        System.out.println(String.format("Validating Transaction. %s Inputs %s Outputs", tx.numInputs(), tx.numOutputs()));
 
-        return validator.isValid(this.getCurrentPool(), tx);
+        int inputSum = 0;
+        int outputSum = 0;
+
+        //This set will hold all "claimed" txs, so we can enforce rule 3.
+        Set<UTXO> claimedTXs = new HashSet<>();
+
+        //Loop through all transaction inputs
+        for(int i = 0; i < tx.numInputs(); i++) {
+
+            Transaction.Input currentInput = tx.getInput(i);
+
+            //If the input is null, then transaction cant be valid
+            if(currentInput==null) {
+                System.out.println("Input was null, invalid transaction");
+                return false;
+            }
+
+            //Create the UTXO for this input, then check if it exists in the current pool
+            UTXO utxo = new UTXO(currentInput.prevTxHash, currentInput.outputIndex);
+
+            //If UTXO made from current TX is not in the pool or has already been claimed by another TX it is invalid
+            if(!utxoPool.contains(utxo) || claimedTXs.contains(utxo)) {
+                System.out.println("UTXO for current TX either not in pool or already claimed, invalid transaction");
+                return false;
+            }
+
+            //Generated UTXO was in current pool and not already claimed, so claim it and move on
+            claimedTXs.add(utxo);
+
+            Transaction.Output currentOutput = utxoPool.getTxOutput(utxo);
+
+            //To verify a signature, we need a public key, message (raw unsigned data) and a signature
+            PublicKey pubkey = currentOutput.address;
+            byte[] message = tx.getRawDataToSign(i);
+            byte[] signature = currentInput.signature;
+
+            //No signature = not valid transaction
+            if(signature==null) {
+                System.out.println("Unsigned input, invalid transaction");
+                return false;
+            }
+
+            //If signature cannot be validated then return false
+            if(!Crypto.verifySignature(pubkey, message, signature)) {
+                System.out.println("Invalid Signature, invalid transaction");
+                return false;
+            }
+
+            //If we have made it here then the input is valid (not claimed multiple times, signature checks out)
+            System.out.println(String.format("Adding: %s to Input", currentOutput.value));
+            inputSum += currentOutput.value;
+        }
+
+        //Loop through all transaction outputs
+        for(int i = 0; i < tx.numOutputs(); i++) {
+
+            Transaction.Output currentTxOutput = tx.getOutput(i);
+            if(currentTxOutput.value<0) {
+                System.out.println("Output values cannot be negative, invalid transaction");
+                return false;
+            }
+
+            System.out.println(String.format("Adding: %s to Output", currentTxOutput.value));
+            outputSum += currentTxOutput.value;
+        }
+
+
+        System.out.println(String.format("Checking Sums. Input: %s Output %s", inputSum, outputSum));
+        //Sum of the transaction inputs is greater than the sum of the output values
+
+        return outputSum <= inputSum;
     }
 
     /**
@@ -166,6 +133,12 @@ public class TxHandler {
      */
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
         // IMPLEMENT THIS
+
+        //Iterate over possible transactions
+        //Pass each to validate
+        //If it validates add it to an array of "accepted" transactions
+        //and update the UTXO pool (collection of unspent transaction ouputs) so remove from pool
+        //if the transaction is being "spent" and added to "accepted" transactions
 
         return null;
     }
