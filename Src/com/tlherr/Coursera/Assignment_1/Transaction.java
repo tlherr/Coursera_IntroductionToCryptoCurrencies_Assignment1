@@ -142,6 +142,11 @@ public class Transaction {
         return sigD;
     }
 
+    /**
+     *
+     * @param signature
+     * @param index     integer Input Index
+     */
     public void addSignature(byte[] signature, int index) {
         inputs.get(index).addSignature(signature);
     }

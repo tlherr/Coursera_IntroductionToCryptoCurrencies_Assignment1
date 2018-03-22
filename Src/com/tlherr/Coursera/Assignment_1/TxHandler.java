@@ -40,6 +40,8 @@ public class TxHandler {
          */
         public boolean isValid(UTXOPool utxoPool, Transaction tx) {
 
+            System.out.println(String.format("Validating Transaction. %s Inputs %s Outputs", tx.numInputs(), tx.numOutputs()));
+
             int inputSum = 0;
             int outputSum = 0;
 
@@ -53,6 +55,7 @@ public class TxHandler {
 
                 //If the input is null, then transaction cant be valid
                 if(currentInput==null) {
+                    System.out.println("Input was null, invalid transaction");
                     return false;
                 }
 
@@ -61,44 +64,55 @@ public class TxHandler {
 
                 //If UTXO made from current TX is not in the pool or has already been claimed by another TX it is invalid
                 if(!utxoPool.contains(utxo) || claimedTXs.contains(utxo)) {
+                    System.out.println("UTXO for current TX either not in pool or already claimed, invalid transaction");
                     return false;
                 }
 
                 //Generated UTXO was in current pool and not already claimed, so claim it and move on
                 claimedTXs.add(utxo);
 
-                //To verify a signature, we need a public key, message (raw unsigned data) and a signature
-
                 Transaction.Output currentOutput = utxoPool.getTxOutput(utxo);
 
-
+                //To verify a signature, we need a public key, message (raw unsigned data) and a signature
                 PublicKey pubkey = currentOutput.address;
-
                 byte[] message = tx.getRawDataToSign(i);
-
                 byte[] signature = currentInput.signature;
+
+                //No signature = not valid transaction
+                if(signature==null) {
+                    System.out.println("Unsigned input, invalid transaction");
+                    return false;
+                }
 
                 //If signature cannot be validated then return false
                 if(!Crypto.verifySignature(pubkey, message, signature)) {
+                    System.out.println("Invalid Signature, invalid transaction");
                     return false;
                 }
 
                 //If we have made it here then the input is valid (not claimed multiple times, signature checks out)
+                System.out.println(String.format("Adding: %s to Input", currentOutput.value));
                 inputSum += currentOutput.value;
             }
 
             //Loop through all transaction outputs
             for(int i = 0; i < tx.numOutputs(); i++) {
 
-                Transaction.Output currentOutput = tx.getOutput(i);
-                if(currentOutput.value<0) {
+                Transaction.Output currentTxOutput = tx.getOutput(i);
+                if(currentTxOutput.value<0) {
+                    System.out.println("Output values cannot be negative, invalid transaction");
                     return false;
                 }
-                outputSum+=currentOutput.value;
+
+                System.out.println(String.format("Adding: %s to Output", currentTxOutput.value));
+                outputSum += currentTxOutput.value;
             }
 
 
-            return inputSum < outputSum;
+            System.out.println(String.format("Checking Sums. Input: %s Output %s", inputSum, outputSum));
+            //Sum of the transaction inputs is greater than the sum of the output values
+
+            return outputSum <= inputSum;
         }
     }
 
@@ -142,7 +156,7 @@ public class TxHandler {
 
         TxValidator validator = new TxValidator();
 
-        return validator.isValid(this.currentPool, tx);
+        return validator.isValid(this.getCurrentPool(), tx);
     }
 
     /**
