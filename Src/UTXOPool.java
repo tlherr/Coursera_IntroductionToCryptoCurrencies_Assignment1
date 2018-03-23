@@ -1,16 +1,15 @@
-package com.tlherr.Coursera.Assignment_1;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
 /**
- * Class represents current set of outstanding UTXOs and contains a map from each com.tlherr.Coursera.Assignment_1.UTXO to its cooresponding transaction
+ * Class represents current set of outstanding UTXOs and contains a map from each UTXO to its cooresponding transaction
  * output.
  *
- * Contains constructures to create a new empty com.tlherr.Coursera.Assignment_1.UTXOPool or copy a given pool
- * Also has methods to add/remove UTXOs from the pool and get output of cooresponding of given com.tlherr.Coursera.Assignment_1.UTXO
- * Check if com.tlherr.Coursera.Assignment_1.UTXO is in the pool
+ * Contains constructures to create a new empty UTXOPool or copy a given pool
+ * Also has methods to add/remove UTXOs from the pool and get output of cooresponding of given UTXO
+ * Check if UTXO is in the pool
  * Get list of all UTXOs in the pool
  */
 public class UTXOPool {
@@ -20,35 +19,35 @@ public class UTXOPool {
      */
     private HashMap<UTXO, Transaction.Output> H;
 
-    /** Creates a new empty com.tlherr.Coursera.Assignment_1.UTXOPool */
+    /** Creates a new empty UTXOPool */
     public UTXOPool() {
         H = new HashMap<UTXO, Transaction.Output>();
     }
 
-    /** Creates a new com.tlherr.Coursera.Assignment_1.UTXOPool that is a copy of {@code uPool} */
+    /** Creates a new UTXOPool that is a copy of {@code uPool} */
     public UTXOPool(UTXOPool uPool) {
         H = new HashMap<UTXO, Transaction.Output>(uPool.H);
     }
 
-    /** Adds a mapping from com.tlherr.Coursera.Assignment_1.UTXO {@code utxo} to transaction output @code{txOut} to the pool */
+    /** Adds a mapping from UTXO {@code utxo} to transaction output @code{txOut} to the pool */
     public void addUTXO(UTXO utxo, Transaction.Output txOut) {
         H.put(utxo, txOut);
     }
 
-    /** Removes the com.tlherr.Coursera.Assignment_1.UTXO {@code utxo} from the pool */
+    /** Removes the UTXO {@code utxo} from the pool */
     public void removeUTXO(UTXO utxo) {
         H.remove(utxo);
     }
 
     /**
-     * @return the transaction output corresponding to com.tlherr.Coursera.Assignment_1.UTXO {@code utxo}, or null if {@code utxo} is
+     * @return the transaction output corresponding to UTXO {@code utxo}, or null if {@code utxo} is
      *         not in the pool.
      */
     public Transaction.Output getTxOutput(UTXO ut) {
         return H.get(ut);
     }
 
-    /** @return true if com.tlherr.Coursera.Assignment_1.UTXO {@code utxo} is in the pool and false otherwise */
+    /** @return true if UTXO {@code utxo} is in the pool and false otherwise */
     public boolean contains(UTXO utxo) {
         return H.containsKey(utxo);
     }

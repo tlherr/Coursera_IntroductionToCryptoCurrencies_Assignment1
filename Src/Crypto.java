@@ -1,5 +1,3 @@
-package com.tlherr.Coursera.Assignment_1;
-
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;

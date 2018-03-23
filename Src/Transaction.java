@@ -1,5 +1,3 @@
-package com.tlherr.Coursera.Assignment_1;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,7 +8,7 @@ import java.security.PublicKey;
 /**
  * Represents a ScroogeCoin transaction
  *
- * com.tlherr.Coursera.Assignment_1.Transaction contains a list of inputs, outputs and methods to add/remove inputs/outputs
+ * Transaction contains a list of inputs, outputs and methods to add/remove inputs/outputs
  * also contain methods to compute digests to sign/hash, add signature to output and compute and store the hash of the transaction
  * once all inputs/outputs/signatures have been added
  *
@@ -25,7 +23,7 @@ public class Transaction {
      * in spent output)
      */
     public class Input {
-        /** hash of the com.tlherr.Coursera.Assignment_1.Transaction whose output is being used */
+        /** hash of the Transaction whose output is being used */
         public byte[] prevTxHash;
         /** used output's index in the previous transaction */
         public int outputIndex;
